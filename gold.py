@@ -1,5 +1,6 @@
 import requests
 from lxml import html
+from bs4 import BeautifulSoup
 
 categories = [
      "ANTH ",
@@ -88,8 +89,8 @@ viewstates = open("viewstate.dat", "r").readlines()
 login_vs = viewstates[0].strip()
 find_vs = viewstates[1].strip()
 credentials = open("credentials.dat", "r").readlines()
-username = viewstates[0].strip()
-password = viewstates[1].strip()
+username = credentials[0].strip()
+password = credentials[1].strip()
 login = {
     "__LASTFOCUS":"",
     "__VIEWSTATE":login_vs,
@@ -139,7 +140,7 @@ scrape_url = "https://my.sa.ucsb.edu/gold/ResultsFindCourses.aspx"
 home_url = "https://my.sa.ucsb.edu/gold/Home.aspx"
 session = requests.session()
 session.post(url=login_url, data=login)
-for category in categories:
+for category in categories[:1]:
      find["ctl00$pageContent$departmentDropDown"] = category
      session.post(url=find_url, data=find)
      url = session.get(url=scrape_url)
