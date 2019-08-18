@@ -53,7 +53,7 @@ def scrape(content):
         title_text = title_span[0].text
         courses.append(scrape_title(title_text))
         
-        grading_span = ch[0].find_all('span', class_='pr5'))
+        grading_span = ch[0].find_all('span', class_='pr5')
         if len(grading_span) != 2:
             eprint("Did not find grading info in {}".format(ch[0]))
             continue
