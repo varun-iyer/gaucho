@@ -1,4 +1,5 @@
 import requests
+from time import sleep
 from lxml import html
 from bs4 import BeautifulSoup
 
@@ -140,8 +141,16 @@ scrape_url = "https://my.sa.ucsb.edu/gold/ResultsFindCourses.aspx"
 home_url = "https://my.sa.ucsb.edu/gold/Home.aspx"
 session = requests.session()
 session.post(url=login_url, data=login)
-for category in categories[:1]:
-     find["ctl00$pageContent$departmentDropDown"] = category
-     session.post(url=find_url, data=find)
-     url = session.get(url=scrape_url)
-open("scrape.html", "w").write(url.content.decode("utf-8"))
+for category in categories[15:]:
+     c = True
+     while c == True:
+        try:
+             c = False
+             find["ctl00$pageContent$departmentDropDown"] = category
+             session.post(url=find_url, data=find)
+             url = session.get(url=scrape_url)
+             print("Downloaded {}".format(category.lower().strip()))
+             open("pages/{}.html".format(category.strip().lower()), "w").write(url.content.decode("utf-8"))
+        except requests.exceptions.ConnectionError:
+            c = True
+            sleep(5)
