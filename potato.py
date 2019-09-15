@@ -51,6 +51,7 @@ class Lecture:
     location = ""
     space = 0
     max_ = 0
+    enrolled = 0
     enrlcd = 0
     sections = []
 
@@ -69,17 +70,17 @@ class Lecture:
 
     def __init__(self, div):
         self.sections = []
-        self.days = get_text(div.find_all('div', class_="col-lg-search-days")[0]).strip()
-        self.time = get_text(div.find_all('div', class_="col-lg-search-time")[0]).strip()
-        self.location = get_text(div.find_all('div', class_="col-lg-search-location")[0].find('a')).strip()
-        self.instructor = get_text(div.find_all('div', class_="col-lg-search-instructor")[0].find('span')).strip()
-        self.max_ = int(get_text(div.find_all('div', class_="col-lg-days")[0]).strip())
-        self.enrlcd = int(get_text(div.find_all('div', class_="col-sm-pull-11")[0]).strip())
+        self.days = get_text(div.find('div', class_="col-lg-search-days")).strip()
+        self.time = get_text(div.find('div', class_="col-lg-search-time")).strip()
+        self.location = get_text(div.find('div', class_="col-lg-search-location").find('a')).strip()
+        self.instructor = get_text(div.find('div', class_="col-lg-search-instructor").find('span')).strip()
+        self.max_ = int(get_text(div.find('div', class_="col-lg-days")).strip())
+        self.enrlcd = int(get_text(div.find('div', class_="col-sm-pull-11")).strip())
         try:
             self.space = int(get_text(div.find_all('div', class_="col-lg-search-space")[0]).strip())
         except ValueError:
             self.space = 0
-
+        self.enrolled = self.max_ - self.space
         self.sections = []
         for section in div.find_all('div', class_='susbSessionItem'):
             self.add(Section(section))
@@ -146,23 +147,29 @@ def get_text(div):
 def scrape(content):
     soup = BeautifulSoup((content), 'html.parser')
     headers = soup.find_all('div', class_='courseSearchHeader')
-    info = soup.find_all('div', class_='row info')
     courses = []
 
-    for ch in zip(headers, info):
-        title_span = ch[0].find_all('span', class_='courseTitle')
-        title_text = title_span[0].text
-        course = scrape_title(title_text)
+    for ch in headers:
+        try:
+            title_span = ch.find('span', class_='courseTitle')
+            title_text = title_span.text
+            course = scrape_title(title_text)
 
-        grading_span = ch[0].find_all('span', class_='pr5')
-        course.units = scrape_units(grading_span[0].text)
-        course.grading = scrape_grading(grading_span[1].text)
-        course.add(Lecture(ch[1]))
-        courses.append(course)
+            grading_span = ch.find_all('span', class_='pr5')
+            course.units = scrape_units(grading_span[0].text)
+            course.grading = scrape_grading(grading_span[1].text)
+            
+            lec = ch.find_next_sibling()
+            while lec is not None and "courseSearchItem" in lec.attrs["class"]:
+                course.add(Lecture(lec))
+                lec = lec.find_next_sibling()
+            courses.append(course)
+        except:
+            print(ch.text.replace("\n", " "))
     return courses
 
 for arg in sys.argv[1:]:
-	page = open(arg, "r").read()
-	c = scrape(page)
-	print("Finished {}".format(arg[arg.index("/") + 1:])
-	pickle.dump(c, open("pickles/{}.p".format(arg[arg.index("/") + 1:]), "wb"))
+    page = open(arg, "r").read()
+    c = scrape(page)
+    print("Finished {} {} courses".format(len(c), arg[arg.index("/") + 1:arg.index(".")]))
+    pickle.dump(c, open("pickles/{}.p".format(arg[arg.index("/") + 1:]), "wb"))
