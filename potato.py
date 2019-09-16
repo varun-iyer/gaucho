@@ -110,16 +110,16 @@ class Course:
         self.lectures.append(lecture)
 
 def scrape_title(text):
-    dept = re.findall("^[A-Z]+\s", text)
+    dept = re.findall("^([A-Z&]+\s+)+", text)
     if len(dept) == 1:
         dept = dept[0].strip()
     else:
         raise ParseError("Did not find dept! {}".format(text))
-    num = re.findall("\s\d+\w*\s", text)
-    if len(num) == 1:
+    num = re.findall("\s\d+\w*\W", text)
+    if len(num) > 0:
         num = num[0].strip()
     else:
-        raise ParseError("Did not find dept! {}".format(text))
+        raise ParseError("Did not find num! {}".format(text))
     idx = text.index(num) + len(num)
     name = text[idx:].strip()
     name = re.sub("^\W+", "", name)
@@ -164,12 +164,14 @@ def scrape(content):
                 course.add(Lecture(lec))
                 lec = lec.find_next_sibling()
             courses.append(course)
-        except:
-            print(ch.text.replace("\n", " "))
+        except Exception as e:
+            eprint(ch.text.replace("\n", " "))
+            eprint("line:{} {}".format(sys.exc_info()[2].tb_lineno, repr(e)))
     return courses
 
-for arg in sys.argv[1:]:
-    page = open(arg, "r").read()
-    c = scrape(page)
-    print("Finished {} {} courses".format(len(c), arg[arg.index("/") + 1:arg.index(".")]))
-    pickle.dump(c, open("pickles/{}.p".format(arg[arg.index("/") + 1:]), "wb"))
+if __name__ == "__main__":
+    for arg in sys.argv[1:]:
+        page = open(arg, "r").read()
+        c = scrape(page)
+        print("Finished {} {} courses".format(len(c), arg[arg.index("/") + 1:arg.index(".")]))
+        pickle.dump(c, open("pickles/{}.p".format(arg[arg.index("/") + 1:]), "wb"))
